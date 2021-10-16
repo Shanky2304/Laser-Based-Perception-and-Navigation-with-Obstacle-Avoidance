@@ -2,6 +2,6 @@
 	<node name="stage" pkg="stage_ros" type="stageros"
 	      args="$(find lab2)/world/playground.world" />
         
-        <node pkg="lab2" name="ransac" type="ransac" output="screen">
+        <node pkg="lab2" name="ransac" type="ransac" output="screen"/>
  
 </launch>
