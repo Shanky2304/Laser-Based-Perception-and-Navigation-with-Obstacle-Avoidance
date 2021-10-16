@@ -8,16 +8,13 @@ project(lab2)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  roslib
   roscpp
   rospy
+  visualization_msgs
   std_msgs
+  message_generation
 )
-
-include_directories(${catkin_INCLUDE_DIRS})
-file(GLOB SRC_FILES src/*.cpp)
-add_library(${PROJECT_NAME} ${SRC_FILES})
-target_link_libraries(${PROJECT_NAME} ${LIBS})
-set(LIBS ${LIBS} ${PROJECT_NAME})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -74,10 +71,10 @@ set(LIBS ${LIBS} ${PROJECT_NAME})
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -114,6 +111,7 @@ catkin_package(
   CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
+set(LIBS ${LIBS} ${catkin_LIBRARIES})
 
 ###########
 ## Build ##
@@ -126,6 +124,17 @@ catkin_package(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/lab2.cpp
 # )
+include_directories(${catkin_INCLUDE_DIRS})
+file(GLOB SRC_FILES src/*.cpp)
+add_library(${PROJECT_NAME} ${SRC_FILES})
+target_link_libraries(${PROJECT_NAME} ${LIBS})
+set(LIBS ${LIBS} ${PROJECT_NAME})
+foreach(_node_file ${SRC_FILES})
+    get_filename_component(_node_name ${_node_file} NAME_WE)
+    add_executable(${_node_name} ${_node_file})
+    target_link_libraries(${_node_name} ${LIBS})
+    add_dependencies(${_node_name} lab2_generate_messages_cpp)
+endforeach()
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -135,7 +144,7 @@ catkin_package(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/lab2_node.cpp)
+#add_executable(${PROJECT_NAME}_node src/ransac.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -158,6 +167,10 @@ catkin_package(
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+install(TARGETS ${PROJECT_NAME}
+        DESTINATION lib)
+install(DIRECTORY include/${PROJECT_NAME}
+        DESTINATION include)
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
