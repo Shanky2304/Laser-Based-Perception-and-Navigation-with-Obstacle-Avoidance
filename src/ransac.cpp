@@ -49,6 +49,7 @@ public:
     void scan_callback(const sensor_msgs::LaserScan & lc_msg) {
         double angle_increment = lc_msg.angle_increment;
         double angle_min = lc_msg.angle_min;
+	// TODO: Need to remove indexes which are range max
         std::vector<double> ranges(lc_msg.ranges.begin(), lc_msg.ranges.end());
         Point p;
         std::vector<Point> points;
@@ -59,9 +60,9 @@ public:
         line_strip_marker.type = visualization_msgs::Marker::LINE_STRIP;
         line_list_marker.type = visualization_msgs::Marker::LINE_LIST;
         points_marker.header.frame_id = "base_link";
-        points_marker.scale.x = 1;
+        points_marker.scale.x = 0.1;
         points_marker.scale.y = 0.1;
-        points_marker.scale.z = 0.1;
+        points_marker.scale.z = 0;
         points_marker.color.a = 1.0;
         points_marker.color.r = 0.0;
         points_marker.color.g = 1.0;
@@ -78,7 +79,8 @@ public:
         }
 
         std::vector<geometry_msgs::Point> viz_points = processToSend(points);
-        points_marker.points = viz_points;
+        ROS_INFO_STREAM("viz points = "<<viz_points[200].x<<" "<<viz_points[200].y<<" "<<viz_points[200].z);
+	points_marker.points = viz_points;
         marker_pub.publish(points_marker);
 
         // Run ransac on the points we got above to detect lines.
