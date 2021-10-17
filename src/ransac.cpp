@@ -58,7 +58,14 @@ public:
         points_marker.type = visualization_msgs::Marker::POINTS;
         line_strip_marker.type = visualization_msgs::Marker::LINE_STRIP;
         line_list_marker.type = visualization_msgs::Marker::LINE_LIST;
-        points_marker.header.frame_id = "/base_link";
+        points_marker.header.frame_id = "base_link";
+        points_marker.scale.x = 1;
+        points_marker.scale.y = 0.1;
+        points_marker.scale.z = 0.1;
+        points_marker.color.a = 1.0;
+        points_marker.color.r = 0.0;
+        points_marker.color.g = 1.0;
+        points_marker.color.b = 0.0;
 
         // Find the cartesian coordinates of points from the scan data.
         for (auto i : ranges) {
