@@ -43,7 +43,7 @@ public:
 
         scan_sub = n.subscribe(scan_topic, 1, &Ransac::scan_callback, this);
 
-        marker_pub = n.advertise<visualization_msgs::Marker>("ransac_vis", 10);
+        marker_pub = n.advertise<visualization_msgs::Marker>("/ransac_vis", 10);
     }
 
     void scan_callback(const sensor_msgs::LaserScan & lc_msg) {
