@@ -60,13 +60,22 @@ public:
         line_strip_marker.type = visualization_msgs::Marker::LINE_STRIP;
         line_list_marker.type = visualization_msgs::Marker::LINE_LIST;
         points_marker.header.frame_id = "base_link";
+        line_strip_marker.header.frame_id = "base_link";
         points_marker.scale.x = 0.01;
         points_marker.scale.y = 0.01;
         points_marker.scale.z = 0;
+        line_strip_marker.scale.x = 0.1;
+        line_strip_marker.scale.y = 0.1;
+        line_strip_marker.scale.z = 0;
         points_marker.color.a = 1.0;
         points_marker.color.r = 0.0;
         points_marker.color.g = 1.0;
         points_marker.color.b = 0.0;
+        line_strip_marker.color.a = 1.0;
+        line_strip_marker.color.r = 0.0;
+        line_strip_marker.color.g = 1.0;
+        line_strip_marker.color.b = 0.0;
+
 
         // Find the cartesian coordinates of points from the scan data.
         for (int i = 0; i < ranges.size(); i++) {
@@ -84,18 +93,25 @@ public:
         std::vector<geometry_msgs::Point> viz_points = processToSend(points);
         // ROS_INFO_STREAM("viz points = "<<viz_points[200].x<<" "<<viz_points[200].y<<" "<<viz_points[200].z);
 	    points_marker.points = viz_points;
-         marker_pub.publish(points_marker);
+        //marker_pub.publish(points_marker);
 
         // Run ransac on the points we got above to detect lines.
         std::vector<std::pair<Point, Point>> line = ransac_cal(points);
+        std::vector<Point> line_points;
+
 
         /* Publish the selected lines to rviz, if we found more than one line we should check if
          * they intersect, if they do we should publish the non-intersecting end points and the intersection point
          * to form a corner.
         */
-
-
-
+        for (auto i : line)
+        {
+            line_points.push_back(i.first);
+            line_points.push_back(i.second);
+        }
+        viz_points = processToSend (line_points);
+        line_strip_marker.points = viz_points;
+        marker_pub.publish(line_strip_marker);
 
     }
 
@@ -118,9 +134,10 @@ public:
         std::pair <Point, Point> best_candidate_pair;
         std::vector <std::pair<Point, Point>> best_candidates;
         double best_candidate_inliers_count = 0;
+        std::vector <Point> final_outliers;
 
         // Unless we have discarded 95% of the points keep going
-        //while (points.size() > (int) (0.05 * points_size)) {
+        while (points.size() > (int) (0.05 * points_size)) {
             // In one iteration of this loop have detected one line
             while (iterations--) {
                 // Random number between zero and one
@@ -129,7 +146,6 @@ public:
                 double random2 = ((double) rand() / RAND_MAX);
                 random2 *= points.size();
 
-                std::vector <Point> inliers, outliers;
 
                 Point point_a = points[(int) random1];
                 // points.erase(points.begin() + (int) random1);
@@ -152,6 +168,7 @@ public:
                  * if the number of outliers is max amongst the ones detected so far this is the best candidate.
                  * */
                 int inliers_count = 0;
+                std::vector <Point> outliers;
                 for (auto i: distances) {
                     if (i.second < inlier_threshold) {
                         inliers_count++;
@@ -164,23 +181,33 @@ public:
                 if (inliers_count > best_candidate_inliers_count) {
                     // Discard the inliers
                     //points = intersection(points, outliers);
+                    final_outliers = outliers;
                     best_candidate_pair.first = point_a;
                     best_candidate_pair.second = point_b;
-                    best_candidate_inliers_count = inliers.size();
+                    best_candidate_inliers_count = inliers_count;
                 }
             }
+            // Best candidate is chosen.
+            points = final_outliers;
             best_candidates.push_back(best_candidate_pair);
-        //}
+        }
         return best_candidates;
     }
 
     // Calculate distance of point_c from the line being formed by point_a & point_b
     // Adapted from the formula & https:stackoverflow.com/a/12132746
-    std::pair<Point ,double> calculate_dist(Point point_a, Point point_b, Point point_c) {
+    std::pair<Point, double> calculate_dist(Point point_a, Point point_b, Point point_c) {
         double a, b, c;
         getLine (point_a, point_b, a, b, c);
         return std::pair<Point ,double>(point_c,abs (a * point_c.x + b * point_c.y + c) / sqrt (a * a + b * b));
     }
+
+    // bool operator==(Point a, Point b) {
+    //     if (a.x == b.x && a.y == b.y)
+    //         return true;
+    //     return false;
+    // }
+    
 
     void getLine(Point point_a, Point point_b, double &a, double &b, double &c)
     {
@@ -196,7 +223,7 @@ public:
         return false;
     }
 
-    /*std::vector <Point> intersection(std::vector <Point> &v1,
+    /*fstd::vector <Point> intersection(std::vector <Point> &v1,
                                            std::vector <Point> &v2) {
         std::vector <Point> v3;
 
