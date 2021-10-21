@@ -29,7 +29,7 @@ private:
 
     bool first_run = true;
 
-    double inlier_threshold = 0.5;
+    double inlier_threshold = 0.07;
 
     struct Point {
         double x;
@@ -57,24 +57,24 @@ public:
         visualization_msgs::Marker points_marker, line_strip_marker, line_list_marker;
         geometry_msgs::Point pub_points;
         points_marker.type = visualization_msgs::Marker::POINTS;
-        line_strip_marker.type = visualization_msgs::Marker::LINE_STRIP;
+        line_list_marker.type = visualization_msgs::Marker::LINE_STRIP;
         line_list_marker.type = visualization_msgs::Marker::LINE_LIST;
         points_marker.header.frame_id = "base_link";
-        line_strip_marker.header.frame_id = "base_link";
+        line_list_marker.header.frame_id = "base_link";
         points_marker.scale.x = 0.01;
         points_marker.scale.y = 0.01;
         points_marker.scale.z = 0;
-        line_strip_marker.scale.x = 0.1;
-        line_strip_marker.scale.y = 0.1;
-        line_strip_marker.scale.z = 0;
+        line_list_marker.scale.x = 0.03;
+        line_list_marker.scale.y = 0.03;
+        line_list_marker.scale.z = 0;
         points_marker.color.a = 1.0;
         points_marker.color.r = 0.0;
         points_marker.color.g = 1.0;
         points_marker.color.b = 0.0;
-        line_strip_marker.color.a = 1.0;
-        line_strip_marker.color.r = 0.0;
-        line_strip_marker.color.g = 1.0;
-        line_strip_marker.color.b = 0.0;
+        line_list_marker.color.a = 1.0;
+        line_list_marker.color.r = 1.0;
+        line_list_marker.color.g = 1.0;
+        line_list_marker.color.b = 0.0;
 
 
         // Find the cartesian coordinates of points from the scan data.
@@ -112,11 +112,11 @@ public:
             line_points.push_back(i.second);
         }
 
-        ROS_INFO ("Got viz points.");
+        // ROS_INFO ("Got viz points.");
 
         viz_points = processToSend (line_points);
-        line_strip_marker.points = viz_points;
-        marker_pub.publish(line_strip_marker);
+        line_list_marker.points = viz_points;
+        marker_pub.publish(line_list_marker);
 
     }
 
@@ -136,10 +136,8 @@ public:
 
         int points_size = points.size();
         std::vector <std::pair<Point, Point>> best_candidates;
-        
 
-
-        ROS_INFO_STREAM("Starting points > " << points_size);
+        // ROS_INFO_STREAM("Starting points > " << points_size);
         // Unless we have discarded 95% of the points keep going
         while (points.size() > (int) (0.05 * points_size)) {
             int iterations = (int) (points.size() * 0.2);
@@ -162,7 +160,7 @@ public:
 
                 // First - A point, Second - Distance of "First" point from the line formed by point_a & point_b
                 std::vector<std::pair<Point, double>> distances;
-                ROS_INFO("Got here!");
+                // ROS_INFO("Got here!");
 
                 for (int i = 0; i < points.size(); i++) {
                     if (i == (int) random1 || i == (int) random2)
@@ -191,7 +189,7 @@ public:
                     // Discard the inliers
                     //points = intersection(points, outliers);
                     final_outliers = outliers;
-                    ROS_INFO_STREAM("inliers_count ="<<inliers_count);
+                    // ROS_INFO_STREAM("inliers_count ="<<inliers_count);
                     best_candidate_pair.first = inliers.front();
                     best_candidate_pair.second = inliers.back();
                     best_candidate_inliers_count = inliers_count;
@@ -199,7 +197,7 @@ public:
             }
             // Best candidate is chosen.
             points = final_outliers;
-            ROS_INFO_STREAM("Remaining points > " << points.size());
+            // ROS_INFO_STREAM("Remaining points > " << points.size());
             best_candidates.push_back(best_candidate_pair);
         }
         return best_candidates;
