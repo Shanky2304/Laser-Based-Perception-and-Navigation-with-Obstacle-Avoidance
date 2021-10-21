@@ -99,6 +99,8 @@ public:
         std::vector<std::pair<Point, Point>> line = ransac_cal(points);
         std::vector<Point> line_points;
 
+        //ROS_INFO_STREAM("Got ransac line, first: "<<line[0].first<<" second:"<< line[0].second);
+
 
         /* Publish the selected lines to rviz, if we found more than one line we should check if
          * they intersect, if they do we should publish the non-intersecting end points and the intersection point
@@ -109,6 +111,9 @@ public:
             line_points.push_back(i.first);
             line_points.push_back(i.second);
         }
+
+        ROS_INFO ("Got viz points.");
+
         viz_points = processToSend (line_points);
         line_strip_marker.points = viz_points;
         marker_pub.publish(line_strip_marker);
@@ -136,8 +141,11 @@ public:
         double best_candidate_inliers_count = 0;
         std::vector <Point> final_outliers;
 
+
+        ROS_INFO_STREAM("Starting points > " << points_size);
         // Unless we have discarded 95% of the points keep going
         while (points.size() > (int) (0.05 * points_size)) {
+            ROS_INFO_STREAM("Remaining points > " << points.size());
             // In one iteration of this loop have detected one line
             while (iterations--) {
                 // Random number between zero and one
@@ -168,11 +176,11 @@ public:
                  * if the number of outliers is max amongst the ones detected so far this is the best candidate.
                  * */
                 int inliers_count = 0;
-                std::vector <Point> outliers;
+                std::vector <Point> outliers, inliers;
                 for (auto i: distances) {
                     if (i.second < inlier_threshold) {
                         inliers_count++;
-                        // inliers.push_back(i);
+                        inliers.push_back(i.first);
                     } else {
                         outliers.push_back(i.first);
                     }
@@ -182,8 +190,8 @@ public:
                     // Discard the inliers
                     //points = intersection(points, outliers);
                     final_outliers = outliers;
-                    best_candidate_pair.first = point_a;
-                    best_candidate_pair.second = point_b;
+                    best_candidate_pair.first = inliers.front();
+                    best_candidate_pair.second = inliers.back();
                     best_candidate_inliers_count = inliers_count;
                 }
             }
@@ -201,12 +209,6 @@ public:
         getLine (point_a, point_b, a, b, c);
         return std::pair<Point ,double>(point_c,abs (a * point_c.x + b * point_c.y + c) / sqrt (a * a + b * b));
     }
-
-    // bool operator==(Point a, Point b) {
-    //     if (a.x == b.x && a.y == b.y)
-    //         return true;
-    //     return false;
-    // }
     
 
     void getLine(Point point_a, Point point_b, double &a, double &b, double &c)
