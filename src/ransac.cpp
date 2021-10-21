@@ -14,20 +14,11 @@ class Ransac {
 private:
     ros::NodeHandle n;
 
-    double max_speed, max_steering_angle;
-
-    double safe_distance_threshold = 1;
-
     // Listen for odom & laser scan messages
     ros::Subscriber scan_sub;
 
     // Publish drive data
-    ros::Publisher drive_pub, marker_pub;
-
-    // previous desired steering angle
-    double prev_angle=0.0;
-
-    bool first_run = true;
+    ros::Publisher marker_pub;
 
     double inlier_threshold = 0.07;
 
@@ -39,7 +30,7 @@ private:
 public:
     Ransac() {
         n = ros::NodeHandle("~");
-        std::string scan_topic="/base_scan";
+        std::string scan_topic = "/base_scan";
 
         scan_sub = n.subscribe(scan_topic, 1, &Ransac::scan_callback, this);
 
@@ -49,7 +40,6 @@ public:
     void scan_callback(const sensor_msgs::LaserScan & lc_msg) {
         double angle_increment = lc_msg.angle_increment;
         double angle_min = lc_msg.angle_min;
-	// TODO: Need to remove indexes which are range max
         std::vector<double> ranges(lc_msg.ranges.begin(), lc_msg.ranges.end());
         Point p;
         std::vector<Point> points;

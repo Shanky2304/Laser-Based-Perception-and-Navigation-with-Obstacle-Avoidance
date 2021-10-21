@@ -106,9 +106,9 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES lab2
-  CATKIN_DEPENDS roscpp rospy std_msgs
+#  INCLUDE_DIRS include
+#  LIBRARIES lab2
+#  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 set(LIBS ${LIBS} ${catkin_LIBRARIES})
@@ -123,18 +123,17 @@ set(LIBS ${LIBS} ${catkin_LIBRARIES})
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/lab2.cpp
-# )
-include_directories(${catkin_INCLUDE_DIRS})
-file(GLOB SRC_FILES src/*.cpp)
-add_library(${PROJECT_NAME} ${SRC_FILES})
-target_link_libraries(${PROJECT_NAME} ${LIBS})
-set(LIBS ${LIBS} ${PROJECT_NAME})
-foreach(_node_file ${SRC_FILES})
-    get_filename_component(_node_name ${_node_file} NAME_WE)
-    add_executable(${_node_name} ${_node_file})
-    target_link_libraries(${_node_name} ${LIBS})
-    add_dependencies(${_node_name} lab2_generate_messages_cpp)
-endforeach()
+# )fa
+include_directories(include ${catkin_INCLUDE_DIRS})
+
+
+add_executable(ransac src/ransac.cpp)
+target_link_libraries(ransac ${LIBS})
+add_dependencies(ransac lab2_generate_messages_cpp)
+
+add_executable(bug2 src/bug2.cpp)
+target_link_libraries(bug2 ${LIBS})
+add_dependencies(bug2 lab2_generate_messages_cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -167,10 +166,6 @@ endforeach()
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-install(TARGETS ${PROJECT_NAME}
-        DESTINATION lib)
-install(DIRECTORY include/${PROJECT_NAME}
-        DESTINATION include)
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
