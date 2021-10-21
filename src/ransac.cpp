@@ -135,18 +135,18 @@ public:
     std::vector <std::pair<Point, Point>> ransac_cal(std::vector<Point> points) {
 
         int points_size = points.size();
-        int iterations = (int) (points_size * 0.2);
-        std::pair <Point, Point> best_candidate_pair;
         std::vector <std::pair<Point, Point>> best_candidates;
-        double best_candidate_inliers_count = 0;
-        std::vector <Point> final_outliers;
+        
 
 
         ROS_INFO_STREAM("Starting points > " << points_size);
         // Unless we have discarded 95% of the points keep going
         while (points.size() > (int) (0.05 * points_size)) {
-            ROS_INFO_STREAM("Remaining points > " << points.size());
-            // In one iteration of this loop have detected one line
+            int iterations = (int) (points.size() * 0.2);
+            std::pair <Point, Point> best_candidate_pair;
+            double best_candidate_inliers_count = 0;
+            std::vector <Point> final_outliers;
+            // In one complete iteration of this loop we'd have detected one line
             while (iterations--) {
                 // Random number between zero and one
                 double random1 = ((double) rand() / RAND_MAX);
@@ -161,7 +161,8 @@ public:
                 // points.erase(points.begin() + (int) random1);
 
                 // First - A point, Second - Distance of "First" point from the line formed by point_a & point_b
-                std::vector<std::pair<Point ,double>> distances;
+                std::vector<std::pair<Point, double>> distances;
+                ROS_INFO("Got here!");
 
                 for (int i = 0; i < points.size(); i++) {
                     if (i == (int) random1 || i == (int) random2)
@@ -190,6 +191,7 @@ public:
                     // Discard the inliers
                     //points = intersection(points, outliers);
                     final_outliers = outliers;
+                    ROS_INFO_STREAM("inliers_count ="<<inliers_count);
                     best_candidate_pair.first = inliers.front();
                     best_candidate_pair.second = inliers.back();
                     best_candidate_inliers_count = inliers_count;
@@ -197,6 +199,7 @@ public:
             }
             // Best candidate is chosen.
             points = final_outliers;
+            ROS_INFO_STREAM("Remaining points > " << points.size());
             best_candidates.push_back(best_candidate_pair);
         }
         return best_candidates;
