@@ -36,6 +36,8 @@ private:
     // Set to one when the detected line has been populated and the robot needs to orient itself.
     bool orient = 0;
 
+    // Turn left when we need to
+    bool turn_left = 0;
 
 public:
 	Bug2() {
@@ -59,21 +61,40 @@ public:
 		std::vector<double> ranges(lc_msg.ranges.begin(), lc_msg.ranges.end());
 		ROS_INFO_STREAM("Num of scans: "<<ranges.size());
 
-		//for (auto i : ranges) {
-			if (ranges[151] < 1.0) {
+		no_obstacle = 1;
+
+		for (int i = 0; i< ranges.size(); i++) {
+			if (i > 145 && i < 157 && ranges[i] < 1.0) {
 				// ROS_INFO("Less than 1!!");
 				no_obstacle = 0;
 				mode = 0;
 				obs_need_to_turn = 1;
+				//break;
+			} else if (ranges[i] < 1.0) {
+				no_obstacle = 0;
+				//break;
+			} 
+			//else if (!mode && r) {
+			 //	turn_left = 1;
+			//}
+		}
+
+		if(!mode && no_obstacle) {
+			for (int i = 0; i < ranges.size(); i++) {
+				if (i > 350 && ranges[i] < 3.0) {
+					// Something is on the left so do nothing wall follow is good/
+				} else {
+					turn_left = 1;
+				}
 			}
-		//}
+		}
 
 	}
 
 	void ransac_vis_callback(const visualization_msgs::Marker& marker) {
 
 		// if WALL FOLLOW then do something with detected line
-		if (obs_need_to_turn && marker.type == visualization_msgs::Marker::LINE_LIST && !orient) {
+		if (!mode && obs_need_to_turn && marker.type == visualization_msgs::Marker::LINE_LIST) {
 			
 			ROS_INFO("Detected a line with ransac!");
 			std::vector<geometry_msgs::Point> points = marker.points;
@@ -92,7 +113,6 @@ public:
 		QuaternionToRPY(quat, rpy);
 
 		if (mode) {
-
 
 			// Slope of line from the current position to the goal, our robot should also orient with this.
 			double theta_of_slope = atan((goal_y - position.y) / (goal_x - position.x));
@@ -166,7 +186,23 @@ public:
 				}
 				orient = 0;
 				obs_need_to_turn = 0;
-			} else {
+
+			} 
+			 else if (turn_left) {
+				// None of the ranges are less than one and we're in wall follow
+				// Turn left by 90
+				geometry_msgs::Twist twist;
+				twist.angular.z = 1.57;
+				ROS_INFO("Turning...");
+				publish_cmd_vel(twist);
+				ros::Duration(1).sleep();
+				twist.angular.z = 0.0;
+				publish_cmd_vel(twist);
+				turn_left = 0;
+
+			} 
+			else {
+
 				twist.linear.x = 1.0;
 				publish_cmd_vel(twist);
 			}
@@ -181,6 +217,7 @@ public:
 	void publish_cmd_vel(geometry_msgs::Twist twist) {
 
 		ROS_INFO_STREAM("Twist.linear.x = "<<twist.linear.x);
+		ROS_INFO_STREAM("Twist.linear.x = "<<twist.angular.z);
 		drive_pub.publish(twist);
 
 	}
