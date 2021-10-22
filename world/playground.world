@@ -1,6 +1,6 @@
 define block model
 (
-  size [5.0 1.0 0.5]
+  size [5.000 1.000 0.500]
   gui_nose 0
 )
 
@@ -15,16 +15,16 @@ define topurg ranger
 
   # generic model properties
   color "blue"
-  size [ 0.05 0.05 0.1 ]
+  size [ 0.050 0.050 0.100 ]
 )
 
 define turtlebot position
 (
-  size [0.35 0.35 0.25]
-  origin [-0.05 0 0 0]
+  size [0.350 0.350 0.250]
+  origin [-0.050 0.000 0.000 0.000]
   gui_nose 1
   drive "diff"
-  topurg(pose [ 0.0 0.0 0 0.000 ])
+  topurg(pose [ 0.000 0.000 0.000 0.000 ])
 )
 
 define floorplan model
@@ -51,7 +51,7 @@ interval_sim 100  # simulation timestep in milliseconds
 
 window
 ( 
-  size [ 745.000 448.000 ] 
+  size [ 745 448 ] 
 
   rotate [ 0.000 -1.560 ]
   scale 28.806 
@@ -62,10 +62,10 @@ floorplan
 ( 
   name "playground"
   bitmap "playground.pgm"
-  size [18.0 19.6 0.5]
-  pose [ 0 0 0 0.000 ]
+  size [18.000 19.600 0.500]
+  pose [ 0.000 0.000 0.000 0.000 ]
 )
 
 # throw in a robot
-turtlebot( pose [ -8.0 -2.0 0 90.000 ] name "evader" color "blue")
-block( pose [ 0.0 4.0 0 180.000 ] color "black")
+turtlebot( pose [ -8.000 -2.000 0.000 40.931 ] name "evader" color "blue")
+block( pose [ 0.000 4.000 0.000 180.000 ] color "black")

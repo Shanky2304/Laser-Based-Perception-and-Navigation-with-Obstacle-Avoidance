@@ -3,6 +3,7 @@
 	      args="$(find lab2)/world/playground.world" />
 
     <node pkg="lab2" name="bug2" type="bug2" output="screen" />
+    <node pkg="lab2" name="ransac" type="ransac" output="screen" />
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find lab2)/rviz/config.rviz"/>
  
 </launch>
