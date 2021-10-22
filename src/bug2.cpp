@@ -26,12 +26,15 @@ private:
     double goal_y = 9.0;
 
     // When 1 means GOAL_SEEK when 0 means WALL_FOLLOW
-    bool mode = 1;
+    bool mode = 1, obs_need_to_turn = 0;
 
     // Flag to check if there's an obstacle in sight
     bool no_obstacle = 1;
 
     double detected_slope;
+
+    // Set to one when the detected line has been populated and the robot needs to orient itself.
+    bool orient = 0;
 
 
 public:
@@ -54,24 +57,28 @@ public:
 	void scan_callback(const sensor_msgs::LaserScan & lc_msg) {
 
 		std::vector<double> ranges(lc_msg.ranges.begin(), lc_msg.ranges.end());
+		ROS_INFO_STREAM("Num of scans: "<<ranges.size());
 
-		for (auto i : ranges) {
-			if (i < 1.0) {
-				ROS_INFO("Less than 1!!");
+		//for (auto i : ranges) {
+			if (ranges[151] < 1.0) {
+				// ROS_INFO("Less than 1!!");
 				no_obstacle = 0;
 				mode = 0;
+				obs_need_to_turn = 1;
 			}
-		}
+		//}
 
 	}
 
 	void ransac_vis_callback(const visualization_msgs::Marker& marker) {
 
 		// if WALL FOLLOW then do something with detected line
-		if (!mode && marker.type == visualization_msgs::Marker::LINE_LIST) {
+		if (obs_need_to_turn && marker.type == visualization_msgs::Marker::LINE_LIST && !orient) {
 			
+			ROS_INFO("Detected a line with ransac!");
 			std::vector<geometry_msgs::Point> points = marker.points;
 			double detected_slope = atan ((points[0].y - points[1].y) / (points[0].x - points[1].x));
+			orient = 1;
 		}
 
 	}
@@ -86,6 +93,7 @@ public:
 
 		if (mode) {
 
+
 			// Slope of line from the current position to the goal, our robot should also orient with this.
 			double theta_of_slope = atan((goal_y - position.y) / (goal_x - position.x));
 
@@ -94,7 +102,7 @@ public:
 			double rad_to_turn = theta_of_slope - rpy.z;
 			geometry_msgs::Twist twist;
 
-			if (rad_to_turn > 0.01) {
+			if (abs(rad_to_turn) > 0.01) {
 
 				twist.angular.z = rad_to_turn * 2;
 
@@ -117,44 +125,51 @@ public:
 
 			publish_cmd_vel(twist);
 
-
-
 		} else {
-
-			ROS_INFO_STREAM("No obstacle: "<<no_obstacle);
 
 			geometry_msgs::Twist twist;
 
-			if (no_obstacle) {
-				ROS_INFO("Driving...");
-				twist.linear.x = 1.0;
-			} else {
-				ROS_INFO("Stopping...");
-				twist.linear.x = 0.0;
-			}
-
-			publish_cmd_vel(twist);
-
-
 			// WALL FOLLOW
-			double rad_to_turn = detected_slope - rpy.z;
+			if(orient) {
 
+				ROS_INFO_STREAM("No obstacle: "<<no_obstacle);
 
-			if (rad_to_turn > 0.01) {
+				if (no_obstacle) {
+					ROS_INFO("Driving...");
+					twist.linear.x = 1.0;
+				} else {
+					ROS_INFO("Stopping...");
+					twist.linear.x = 0.0;
+				}
 
-				twist.angular.z = rad_to_turn * 2;
-
-				// publish rad_to_turn*2 angular vel in z
-				ROS_INFO("Turning...");
 				publish_cmd_vel(twist);
-				// Let the robot turn we can safely ignore callbacks while it's turning.
-				ros::Duration(0.5).sleep();
-				twist.angular.z = 0.0;
+
+				// We have stopped at an obstacle need to turn now.
+				obs_need_to_turn = 1;
+
+				double rad_to_turn = detected_slope - rpy.z - 1.1;
+
+				ROS_INFO_STREAM("Current orientation in z: "<<rpy.z<<" & "<<"orientation of the line to the detected_slope: "<<detected_slope);
+
+				ROS_INFO_STREAM("rad_to_turn: "<<rad_to_turn);
+				if (abs(rad_to_turn) > 0.00001) {
+
+					twist.angular.z = rad_to_turn * 2;
+
+					// publish rad_to_turn*2 angular vel in z
+					ROS_INFO("Turning...");
+					publish_cmd_vel(twist);
+					// Let the robot turn.
+					ros::Duration(0.5).sleep();
+					twist.angular.z = 0.0;
+					publish_cmd_vel(twist);
+				}
+				orient = 0;
+				obs_need_to_turn = 0;
+			} else {
+				twist.linear.x = 1.0;
 				publish_cmd_vel(twist);
 			}
-
-			twist.linear.x = 1.0;
-			publish_cmd_vel(twist);
 
 
 		}
