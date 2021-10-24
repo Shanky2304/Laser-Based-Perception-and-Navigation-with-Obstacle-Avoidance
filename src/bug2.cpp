@@ -57,6 +57,8 @@ private:
 
     double theta_of_slope;
 
+    bool reached_goal = 0;
+
 public:
 	Bug2() {
 		n = ros::NodeHandle("~");
@@ -90,7 +92,7 @@ public:
 		no_obstacle = 1;
 
 		for (int i = 0; i< ranges.size(); i++) {
-			if (i > 147 && i < 170 && ranges[i] < 1.6) {
+			if (i > 147 && i < 180 && ranges[i] < 1.6) {
 				// ROS_INFO("Less than 1!!");
 				no_obstacle = 0;
 				mode = 0;
@@ -109,7 +111,7 @@ public:
 
 		if(!mode && no_obstacle) {
 			for (int i = 0; i < ranges.size(); i++) {
-				if (i > 350 && ranges[i] < 3.0) {
+				if (i > 350 && ranges[i] < 1.5) {
 					obs_on_left = 1;
 				} else {
 					turn_left = 1;
@@ -143,11 +145,34 @@ public:
 		curr_point.x = position.x;
 		curr_point.y = position.y;
 
+		if (abs (curr_point.x - goal_x) < 1.2 && abs (curr_point.y - goal_y) < 1.2) {
+			ROS_INFO("Reached the goal!");
+			geometry_msgs::Twist twist;
+			if(abs (curr_point.x - goal_x) < 0.1 && abs (curr_point.y - goal_y) < 0.1) {
+				twist.linear.x = 0.0;
+				twist.angular.z = 0.0;
+				publish_cmd_vel(twist);
+			} else {
+				twist.linear.x = 1.0;
+				twist.angular.z = 1.0;
+				publish_cmd_vel(twist);
+				ros::Duration(1).sleep();
+				twist.linear.x = 0.0;
+				twist.angular.z = 0.0;
+				publish_cmd_vel(twist);
+				reached_goal = 1;
+			}	
+			return;
+		}
+
 		if (mode) {
 
 			ROS_INFO_STREAM("Current orientation in z: "<<rpy.z<<" & "<<"orientation of the line to the goal: "<<theta_of_slope);
 
 			double rad_to_turn = theta_of_slope - rpy.z;
+			if(rpy.z < 0) {
+				rad_to_turn = rpy.z - theta_of_slope;
+			}
 			geometry_msgs::Twist twist;
 
 			if (abs(rad_to_turn) > 0.01) {
