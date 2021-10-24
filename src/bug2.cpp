@@ -148,7 +148,7 @@ public:
 		if (abs (curr_point.x - goal_x) < 1.2 && abs (curr_point.y - goal_y) < 1.2) {
 			ROS_INFO("Reached the goal!");
 			geometry_msgs::Twist twist;
-			if(abs (curr_point.x - goal_x) < 0.07 && abs (curr_point.y - goal_y) < 0.07) {
+			if(abs (curr_point.x - goal_x) < 0.09 && abs (curr_point.y - goal_y) < 0.09) {
 				twist.linear.x = 0.0;
 				twist.angular.z = 0.0;
 				publish_cmd_vel(twist);
